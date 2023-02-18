@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 import gym
 from gym import spaces
 from gym.utils import seeding
-
+import sys
 from ..simulator import MtSimulator, OrderType
 
 
@@ -30,7 +30,6 @@ class MtEnv(gym.Env):
             fee: Union[float, Callable[[str], float]]=0.0005,
             symbol_max_orders: int=1, multiprocessing_processes: Optional[int]=None
         ) -> None:
-
         # validations
         assert len(original_simulator.symbols_data) > 0, "no data available"
         assert len(original_simulator.symbols_info) > 0, "no data available"
@@ -73,12 +72,12 @@ class MtEnv(gym.Env):
         )  # symbol -> [close_order_i(logit), hold(logit), volume]
 
         self.observation_space = spaces.Dict({
-            'balance': spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
-            'equity': spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
-            'margin': spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float64),
-            'features': spaces.Box(low=-np.inf, high=np.inf, shape=self.features_shape, dtype=np.float64),
+            'balance': spaces.Box(low=-sys.float_info.max, high=sys.float_info.max, shape=(1,), dtype=np.float64),
+            'equity': spaces.Box(low=-sys.float_info.max, high=sys.float_info.max, shape=(1,), dtype=np.float64),
+            'margin': spaces.Box(low=-sys.float_info.max, high=sys.float_info.max, shape=(1,), dtype=np.float64),
+            'features': spaces.Box(low=-sys.float_info.max, high=sys.float_info.max, shape=self.features_shape, dtype=np.float64),
             'orders': spaces.Box(
-                low=-np.inf, high=np.inf, dtype=np.float64,
+                low=-sys.float_info.max, high=sys.float_info.max, dtype=np.float64,
                 shape=(len(self.trading_symbols), self.symbol_max_orders, 3)
             )  # symbol, order_i -> [entry_price, volume, profit]
         })
@@ -108,8 +107,8 @@ class MtEnv(gym.Env):
 
     def step(self, action: np.ndarray) -> Tuple[Dict[str, np.ndarray], float, bool, Dict[str, Any]]:
         orders_info, closed_orders_info = self._apply_action(action)
-
         self._current_tick += 1
+
         if self._current_tick == self._end_tick:
             self._done = True
 
